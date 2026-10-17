@@ -1,0 +1,11 @@
+2: PrtSc Home End PgUp PgDn F1-F3 1-5 Tab Q W E R A S D G B Shift Ctrl Alt Space
+1: W A S D arrows Esc
+3: 1-7 Q W E R T A S D F G C V Shift Ctrl
+4: 1-0 Q W E R T Y U P A S D F G H J K L Z X N M Shift Ctrl Alt
+5: Esc ` 1-6 Tab Q W E R D F G V B Ctrl Alt
+6: W R A S D Shift Ctrl Alt arrows
+7: 1-4 W E R A S F Z X C V Shift Ctrl Alt arrows
+8: 1-6 Q W E R D F B
+11: nothing
+12: nothing
+0: nothing; 9: CM1; 10: CM2

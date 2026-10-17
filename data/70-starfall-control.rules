@@ -1,0 +1,4 @@
+# HATOR Starfall Control: let plugdev change the HATOR Starfall's settings (Sino Wealth 258a:002a).
+# Write-only on purpose: feature reports work through a write-only handle, while the keystrokes
+# the same interface sends can't be read.
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="258a", ATTRS{idProduct}=="002a", GROUP="plugdev", MODE="0620"

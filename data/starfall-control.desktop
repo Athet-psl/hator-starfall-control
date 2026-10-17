@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=HATOR Starfall Control
+GenericName=Keyboard Settings
+Comment=Lighting and keys of the HATOR Starfall keyboard
+Exec=starfall-control
+Icon=input-keyboard
+Categories=Settings;HardwareSettings;Qt;KDE;
+Keywords=keyboard;hator;starfall;lighting;backlight;rgb;rainbow;keys;remap;
