@@ -19,7 +19,7 @@ from PyQt6.QtWidgets import (
     QScrollArea, QSlider, QStackedWidget, QVBoxLayout, QWidget,
 )
 
-from . import __author__, __version__, layout
+from . import __author__, __version__, effects, layout
 from .device import (
     BRIGHTEST, CUSTOM_MAPS, EFFECTS, PRESET_MAPS, SLOWEST, Binding, Keyboard, Lighting, find_node, parse_keymap,
 )
@@ -31,7 +31,7 @@ UDEV_RULE = ('SUBSYSTEM=="hidraw", ATTRS{idVendor}=="258a", ATTRS{idProduct}=="0
              'GROUP="plugdev", MODE="0620"')
 UDEV_HINT = (f"echo '{UDEV_RULE}' | sudo tee /etc/udev/rules.d/70-starfall-control.rules && "
              "sudo udevadm control --reload && sudo udevadm trigger --subsystem-match=hidraw")
-ROW_COLOURS = ("#4f6bff", "#22e07a", "#a855ff", "#ff4fc8", "#ff4040", "#ff9a1f")  # the LED colour of each row
+ROW_COLOURS = ("#ff3b45", "#4a3cff", "#1fe09a", "#a83cff", "#ff4f7a", "#ff8a2a")  # the LED colour of each row
 FN_SHORTCUTS = [
     ("Fn + ScrLk", "Next effect"), ("Fn + 1…8", "Key maps M1–M8"), ("Fn + 9 / Fn + 0", "Custom maps CM1 / CM2"),
     ("Fn + ↑ / ↓", "Brightness"), ("Fn + → / ←", "Faster / slower"), ("Fn + PrtSc", "Record a custom map"),
@@ -206,10 +206,6 @@ def scroll_page(*widgets):
 # The keyboard picture
 
 
-def effect_period(speed):
-    return 1.6 + 0.9 * speed  # seconds per cycle; 0 is the fastest
-
-
 class KeyboardView(QWidget):
     """The Starfall drawn key by key. In "lighting" mode it plays an approximation of the
     current effect; in "keys" mode it shows what each key sends and takes clicks."""
@@ -290,34 +286,9 @@ class KeyboardView(QWidget):
             return 0.0
         if light.is_map:
             return 1.0 if key.position in PRESET_KEYS.get(light.map, ()) else 0.0
-        period = effect_period(light.speed)
-        phase = (t / period) % 1.0
-        u = key.centre[0] / layout.WIDTH
-        v = key.centre[1] / layout.HEIGHT
         mode = light.mode
-        if mode == 1:
-            return 1.0
-        if mode == 3:
-            return 0.5 - 0.5 * math.cos(2 * math.pi * phase)
-        if mode == 4:
-            order = sorted(KEYS, key=lambda k: (k.row, k.x if k.row % 2 == 0 else -k.x))
-            head = phase * len(order)
-            behind = (head - order.index(key)) % len(order)
-            return max(0.0, 1.0 - behind / 7)
-        if mode in (5, 6):
-            centre = math.hypot(u - 0.5, (v - 0.5) * 0.4)
-            if phase < 0.6:
-                fill = phase / 0.6
-                if mode == 5:
-                    d = min(math.hypot(1 - u, v * 0.4), math.hypot(u, (1 - v) * 0.4)) / 0.75
-                    return 1.0 if d < fill else 0.0
-                angle = (math.atan2(v - 0.5, u - 0.5) / (2 * math.pi)) % 1.0
-                return 1.0 if (1 - centre / 0.55) * 0.75 + angle * 0.25 < fill else 0.0
-            ring = (phase - 0.6) / 0.4 * 0.6
-            return math.exp(-((centre - ring) / 0.05) ** 2)
-        if mode == 7:
-            band = phase * 1.3 - 0.15
-            return 1.0 - math.exp(-((u - band) / 0.06) ** 2)
+        if mode in effects.TIMED:
+            return effects.glow(mode, key, t, light.speed)
         now = time.monotonic()
         fade = 0.25 + 0.3 * light.speed
         glow = 0.0
@@ -498,12 +469,12 @@ class LightingTab(QWidget):
 
         self.group = QButtonGroup(self)
         self.group.setExclusive(True)
-        effects = QGridLayout()
-        effects.setSpacing(8)
+        effect_grid = QGridLayout()
+        effect_grid.setSpacing(8)
         for index, mode in enumerate(EFFECTS):
             name, about = EFFECT_INFO[mode]
             tile = self._tile(name, about, ("effect", mode))
-            effects.addWidget(tile, index // 4, index % 4)
+            effect_grid.addWidget(tile, index // 4, index % 4)
         maps = QGridLayout()
         maps.setSpacing(8)
         for index, number in enumerate(PRESET_MAPS):
@@ -553,7 +524,7 @@ class LightingTab(QWidget):
         page = scroll_page(
             self.view,
             panel("", sliders),
-            panel("Effect", effects, self.effect_about),
+            panel("Effect", effect_grid, self.effect_about),
             panel("Key map", dim_label("Light only some keys. M1–M8 are built in; CM1 and CM2 are yours, "
                                        "recorded on the keyboard.", wrap=True), maps, self.custom_hint),
         )

@@ -153,9 +153,10 @@ EFFECT_INFO = {
     1: ("Static", "Every key lit."),
     2: ("Reactive", "A key lights up when you press it. Speed sets how long it fades."),
     3: ("Breathing", "The whole keyboard slowly lights up and fades."),
-    4: ("Snake", "Light runs along the rows, back and forth."),
-    5: ("Corners", "Light runs in from two corners to the centre, spins, then spreads out."),
-    6: ("Spiral", "A spiral winds in to the centre, then a ring spreads out from it."),
+    4: ("Snake", "Light runs back and forth along every row, each row the other way."),
+    5: ("Corners", "Light runs in from two corners and meets in the middle, fills the keyboard, then clears "
+                   "from the middle out."),
+    6: ("Spiral", "Light winds in along the rows to the middle, then a ring spreads out from it."),
     7: ("Wave", "A dark wave sweeps over the lit keyboard from left to right."),
     8: ("Ripple", "Light ripples out from every key you press."),
 }
