@@ -13,13 +13,17 @@ was worked out from the keyboard itself.
 
 ## Install
 
+Download the package from [Releases](https://github.com/Athet-psl/hator-starfall-control/releases/latest): `starfall-control_…_all.deb` for Ubuntu and Debian,
+`starfall-control-…noarch.rpm` for Fedora. Or build it from this checkout:
+
 ```sh
-packaging/build-deb.sh 0.1.0
-sudo apt install ./dist/starfall-control_0.1.0_all.deb
+packaging/build-deb.sh 0.1.0 && sudo apt install ./dist/starfall-control_0.1.0_all.deb
+packaging/build-rpm.sh 0.1.0 && sudo dnf install ./dist/starfall-control-0.1.0-1.noarch.rpm   # needs rpm-build
 ```
 
-Then open **HATOR Starfall Control** from the app menu. The package needs `python3-pyqt6` and installs a udev
-rule that lets the `plugdev` group (the desktop user on Ubuntu) change the keyboard's settings.
+Then open **HATOR Starfall Control** from the app menu. The package needs PyQt6 and installs a udev rule for
+the keyboard. On Ubuntu it lets the `plugdev` group (the desktop user) change the keyboard's settings. Fedora
+has no `plugdev`, so there the rule gives access to the logged-in user.
 
 ## How it works
 
@@ -39,9 +43,9 @@ The keyboard is a Sino Wealth chip, USB `258a:002a`. Interface 1 has vendor feat
 - Reports 9 and 10 read back with GET_FEATURE. Right after a change, report 10 can carry leftovers after byte 4.
 - The Fn key is matrix usage `0xb0` and is handled by the keyboard itself.
 
-Feature reports work through a **write-only** handle to the hidraw node, so the udev rule grants write
+Feature reports work through a **write-only** handle to the hidraw node, so the Ubuntu udev rule grants write
 access only (`MODE="0620"`). Programs can change settings but can't read keystrokes, which the same
-interface also sends.
+interface also sends. Fedora's rule (`uaccess`) gives the logged-in user read access as well.
 
 Custom maps CM1/CM2 are recorded on the keyboard: Fn + 9 (or Fn + 0), Fn + PrtSc, the keys to light, Fn + PrtSc.
 
@@ -52,9 +56,16 @@ python3 -m unittest discover tests
 bin/starfall-control
 ```
 
+Every push to `main` runs the tests, builds the .deb on Ubuntu and the .rpm on Fedora and publishes them as
+release `v0.1.<commit count>`, with the messages of the commits since the previous release as its notes.
+
 `research/` has the probes used to work out the protocol, and the keyboard's factory readout.
 
 ## Disclaimer
 
 Not affiliated with or endorsed by HATOR. Comes without warranty. Fn + Esc resets the keyboard to its
 factory settings.
+
+## License
+
+MIT, see [LICENSE](LICENSE).

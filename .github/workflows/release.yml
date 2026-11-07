@@ -1,0 +1,86 @@
+name: Release
+
+# Every push to main: run the tests, build the .deb (on Ubuntu) and the .rpm (on Fedora) and publish them as
+# release v0.1.<commit count>, with the messages of the commits since the previous release as its notes.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency: release
+
+jobs:
+  deb:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Test
+        run: python3 -m unittest discover tests
+
+      - name: Version
+        id: version
+        run: echo "version=$(packaging/version.sh)" >> "$GITHUB_OUTPUT"
+
+      - name: Build the .deb
+        run: packaging/build-deb.sh "${{ steps.version.outputs.version }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deb
+          path: dist/*.deb
+
+  rpm:
+    runs-on: ubuntu-24.04
+    container: fedora:latest
+    steps:
+      - name: Install the build tools
+        run: dnf install -y --setopt=install_weak_deps=False git rpm-build python3
+
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Test
+        run: python3 -m unittest discover tests
+
+      - name: Build the .rpm
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          packaging/build-rpm.sh "$(packaging/version.sh)"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rpm
+          path: dist/*.rpm
+
+  release:
+    needs: [deb, rpm]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v5
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.deb.outputs.version }}
+        run: |
+          previous=$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || true)
+          git log --reverse --format='**%s**%n%n%b' ${previous:+"$previous..HEAD"} > notes.md
+          gh release create "v$VERSION" \
+            "dist/starfall-control_${VERSION}_all.deb" "dist/starfall-control-${VERSION}-1.noarch.rpm" \
+            --title "HATOR Starfall Control $VERSION" --notes-file notes.md --target "$GITHUB_SHA"

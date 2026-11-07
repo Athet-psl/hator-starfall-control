@@ -1,0 +1,3 @@
+# HATOR Starfall Control: let the logged-in user change the HATOR Starfall's settings (Sino Wealth 258a:002a).
+# Fedora has no plugdev group, so this gives the user at the seat read and write access through logind.
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="258a", ATTRS{idProduct}=="002a", TAG+="uaccess"
